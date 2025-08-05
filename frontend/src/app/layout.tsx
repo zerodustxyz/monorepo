@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -7,8 +6,8 @@ import { WalletProvider } from '@/components/WalletProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ZeroDust - Move Leftover ETH',
-  description: 'Move leftover ETH from unused chains with sponsored gas fees',
+  title: 'ZeroDust - Sweep Leftover ETH',
+  description: 'Move leftover ETH from unused chains with sponsored gas',
 }
 
 export default function RootLayout({
