@@ -6,8 +6,32 @@ import { useAccount, useBalance } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { formatEther } from 'viem'
 
+// Type definitions for better TypeScript support
+interface Chain {
+  id: number;
+  name: string;
+  symbol: string;
+  emoji: string;
+  tier: number;
+}
+
+interface PriceData {
+  [key: string]: {
+    usd?: number;
+  } | number;
+}
+
+interface FeeCalculation {
+  baseFee: number;
+  actualGasCost: number;
+  gasBuffer: number;
+  totalFee: number;
+  userReceives: number;
+  feePercentage: number;
+}
+
 // Chain configurations - All Bungee/Socket supported networks (as of 2025-03-21)
-const SUPPORTED_CHAINS = [
+const SUPPORTED_CHAINS: Chain[] = [
   // Tier 1 - Major EVM Chains
   { id: 1, name: 'Ethereum', symbol: 'ETH', emoji: '🔷', tier: 1 },
   { id: 8453, name: 'Base', symbol: 'ETH', emoji: '🔵', tier: 1 },
@@ -18,7 +42,7 @@ const SUPPORTED_CHAINS = [
   // Tier 2 - Popular L2s and Alt-L1s
   { id: 56, name: 'Binance Smart Chain', symbol: 'BNB', emoji: '🟡', tier: 2 },
   { id: 43114, name: 'Avalanche', symbol: 'AVAX', emoji: '🔺', tier: 2 },
-  { id: 250, name: 'Fantom', symbol: 'FTM', emoji: '👻', tier: 2 }, // Limited support - being sunsetted
+  { id: 250, name: 'Fantom', symbol: 'FTM', emoji: '👻', tier: 2 },
   { id: 100, name: 'Gnosis', symbol: 'xDAI', emoji: '🍯', tier: 2 },
   { id: 324, name: 'zkSync Era', symbol: 'ETH', emoji: '⚡', tier: 2 },
   
@@ -29,7 +53,7 @@ const SUPPORTED_CHAINS = [
   { id: 5000, name: 'Mantle', symbol: 'MNT', emoji: '🧥', tier: 3 },
   { id: 34443, name: 'Mode', symbol: 'ETH', emoji: '🌙', tier: 3 },
   { id: 1101, name: 'Polygon zkEVM', symbol: 'ETH', emoji: '🔷', tier: 3 },
-  { id: 1313161554, name: 'Aurora', symbol: 'ETH', emoji: '🌅', tier: 3 }, // Limited support - being sunsetted
+  { id: 1313161554, name: 'Aurora', symbol: 'ETH', emoji: '🌅', tier: 3 },
   
   // Latest Additions (2024-2025)
   { id: 57073, name: 'Ink', symbol: 'ETH', emoji: '🖋️', tier: 3 },
@@ -41,33 +65,33 @@ const SUPPORTED_CHAINS = [
 ]
 
 // Helper function: Get the current price for a cryptocurrency
-function getTokenPrice(symbol: string, prices: any) {
+function getTokenPrice(symbol: string, prices: PriceData): number {
   switch (symbol) {
     case 'ETH':
-      return prices.ethereum?.usd || prices.ethereum || 0
+      return typeof prices.ethereum === 'object' ? prices.ethereum?.usd || 0 : prices.ethereum || 0
     case 'MATIC':
-      return prices['matic-network']?.usd || prices['matic-network'] || 0
+      return typeof prices['matic-network'] === 'object' ? prices['matic-network']?.usd || 0 : prices['matic-network'] || 0
     case 'BNB':
-      return prices.binancecoin?.usd || prices.binancecoin || 0
+      return typeof prices.binancecoin === 'object' ? prices.binancecoin?.usd || 0 : prices.binancecoin || 0
     case 'AVAX':
-      return prices.avalanche?.usd || prices.avalanche || 0
+      return typeof prices.avalanche === 'object' ? prices.avalanche?.usd || 0 : prices.avalanche || 0
     case 'FTM':
-      return prices.fantom?.usd || prices.fantom || 0
+      return typeof prices.fantom === 'object' ? prices.fantom?.usd || 0 : prices.fantom || 0
     case 'xDAI':
       return 1 // xDAI is pegged to $1
     case 'MNT':
-      return prices.mantle?.usd || prices.mantle || 0
+      return typeof prices.mantle === 'object' ? prices.mantle?.usd || 0 : prices.mantle || 0
     case 'S':
-      return prices.sonic?.usd || prices.sonic || 0.10 // Fallback for new tokens
+      return typeof prices.sonic === 'object' ? prices.sonic?.usd || 0.10 : prices.sonic || 0.10
     case 'BERA':
-      return prices.berachain?.usd || prices.berachain || 1.00 // Fallback for testnet tokens
+      return typeof prices.berachain === 'object' ? prices.berachain?.usd || 1.00 : prices.berachain || 1.00
     default:
       return 0
   }
 }
 
-// Helper function: Calculate ZeroDust fees (FIXED VERSION)
-function calculateZeroDustFee(amount: number, actualGasCost: number) {
+// Helper function: Calculate ZeroDust fees
+function calculateZeroDustFee(amount: number, actualGasCost: number): FeeCalculation {
   const baseFee = 0.05 // Always $0.05 base fee
   const gasWithBuffer = actualGasCost * 1.20 // Add 20% buffer to gas cost
   
@@ -76,7 +100,7 @@ function calculateZeroDustFee(amount: number, actualGasCost: number) {
   return {
     baseFee,
     actualGasCost,
-    gasBuffer: gasWithBuffer,  // ← FIXED: Now matches what the UI expects
+    gasBuffer: gasWithBuffer,
     totalFee,
     userReceives: amount - totalFee,
     feePercentage: (totalFee / amount) * 100
@@ -89,7 +113,7 @@ async function getBungeeQuote(params: {
   originChainId: number
   destinationChainId: number
   inputAmount: string
-}) {
+}): Promise<any> {
   try {
     // Build the API request URL
     const queryParams = new URLSearchParams({
@@ -100,7 +124,6 @@ async function getBungeeQuote(params: {
       outputToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // Native token on destination
       inputAmount: params.inputAmount,
       receiverAddress: params.userAddress
-      // Note: No extra fees added - clean quotes for users
     })
 
     // Call Bungee API
@@ -108,7 +131,7 @@ async function getBungeeQuote(params: {
     const data = await response.json()
     
     if (!data.success) {
-      throw new Error(`Bungee quote error: ${data.message}`)
+      throw new Error(`Bungee quote error: ${data.message || 'Unknown error'}`)
     }
     
     return data.result
@@ -119,13 +142,15 @@ async function getBungeeQuote(params: {
 }
 
 // Component: Display balance for a single blockchain
-function ChainBalance({ chain, address, isSelected, onClick, prices }: {
-  chain: any;
+interface ChainBalanceProps {
+  chain: Chain;
   address: `0x${string}` | undefined;
   isSelected: boolean;
   onClick: () => void;
-  prices: any;
-}) {
+  prices: PriceData;
+}
+
+function ChainBalance({ chain, address, isSelected, onClick, prices }: ChainBalanceProps) {
   // Get the balance for this specific chain
   const { data: balance, isLoading } = useBalance({
     address: address,
@@ -195,7 +220,7 @@ export function MultiChainBalance() {
   const [destinationChainId, setDestinationChainId] = useState<number | null>(null)
   
   // State: Real-time cryptocurrency prices
-  const [prices, setPrices] = useState<any>({})
+  const [prices, setPrices] = useState<PriceData>({})
   const [totalValue, setTotalValue] = useState(0)
   
   // State: Bridge quote information
@@ -253,7 +278,7 @@ export function MultiChainBalance() {
     return () => clearInterval(interval)
   }, [])
 
-  // Effect: Calculate total portfolio value (will be real when smart contracts are ready)
+  // Effect: Calculate total portfolio value
   useEffect(() => {
     if (!isConnected || Object.keys(prices).length === 0) return
     
@@ -292,7 +317,7 @@ export function MultiChainBalance() {
 
   // Calculate fees for the selected sweep
   const actualGasCost = 0.05 // Mock gas cost - in real app, get from Bungee quote
-  const feeCalculation = sourceAmount > 0 && sourceChain && isConnected 
+  const feeCalculation: FeeCalculation | null = sourceAmount > 0 && sourceChain && isConnected 
     ? calculateZeroDustFee(
         sourceAmount * getTokenPrice(sourceChain.symbol, prices), // Amount in USD
         actualGasCost
@@ -319,7 +344,7 @@ export function MultiChainBalance() {
 
   // Handle the actual sweep transaction
   const handleSweep = async () => {
-    if (!canSweep || !bungeeQuote || !feeCalculation) return
+    if (!canSweep || !bungeeQuote || !feeCalculation || !sourceChain || !destinationChain) return
     
     try {
       // TODO: Replace with real smart contract integration
@@ -477,7 +502,7 @@ Note: This is a preview. Smart contracts not yet deployed.
       )}
 
       {/* Step 4: Execute Sweep */}
-      {canSweep && feeCalculation && (
+      {canSweep && feeCalculation && sourceChain && destinationChain && (
         <button
           onClick={handleSweep}
           disabled={quoteLoading}

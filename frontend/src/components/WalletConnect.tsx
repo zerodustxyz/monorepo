@@ -2,7 +2,7 @@
 // Clean black and white version
 'use client'
 
-import { useAccount, useConnect, useDisconnect } from './WalletProvider'
+import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { useState } from 'react'
 
 export function WalletConnect() {

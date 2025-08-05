@@ -1,6 +1,5 @@
 // src/lib/wagmi.ts
 // Simplified wallet and chain configuration with auto-detected wallets first
-
 import { http, createConfig } from 'wagmi'
 import { mainnet, base, arbitrum, optimism, polygon } from 'wagmi/chains'
 import { coinbaseWallet, metaMask, walletConnect, injected } from 'wagmi/connectors'
@@ -8,11 +7,11 @@ import type { Chain } from 'wagmi/chains'
 
 // Start with the most popular and well-supported chains
 const supportedChains: readonly [Chain, ...Chain[]] = [
-  mainnet,    // Ethereum
-  base,       // Base (Coinbase's L2)
-  arbitrum,   // Arbitrum One
-  optimism,   // Optimism
-  polygon,    // Polygon
+  mainnet, // Ethereum
+  base, // Base (Coinbase's L2)
+  arbitrum, // Arbitrum One
+  optimism, // Optimism
+  polygon, // Polygon
 ] as const
 
 // Wallet connection setup
@@ -138,7 +137,7 @@ export function getChainInfo(chainId: number) {
 }
 
 // Helper function to check if chain is available (not too expensive)
-export function isChainAvailable(chainId: number) {
+export function isChainAvailable(chainId: number): boolean {
   const chainInfo = getChainInfo(chainId)
   return chainInfo ? true : false
 }
