@@ -1,3 +1,4 @@
+// Updated for deployment
 // src/components/MultiChainBalance.tsx
 // ZeroDust - One source → One destination sweep with Bungee integration
 'use client'
