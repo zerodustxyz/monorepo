@@ -190,6 +190,10 @@ export function MultiChainBalance() {
   const [sourceChainId, setSourceChainId] = useState<number | null>(null)
   const [destinationChainId, setDestinationChainId] = useState<number | null>(null)
   
+  // State: Amount to transfer
+  const [customAmount, setCustomAmount] = useState<string>('')
+  const [useMaxAmount, setUseMaxAmount] = useState<boolean>(true)
+  
   // State: Real-time cryptocurrency prices
   const [prices, setPrices] = useState<PriceData>({})
   const [totalValue, setTotalValue] = useState(0)
@@ -211,10 +215,27 @@ export function MultiChainBalance() {
     }
   })
 
-  // Calculate the amount available to sweep
-  const sourceAmount = sourceBalance?.data && sourceChain && isConnected 
+  // Calculate the max available amount
+  const maxAvailableAmount = sourceBalance?.data && sourceChain && isConnected 
     ? parseFloat(formatEther(sourceBalance.data.value)) 
     : 0
+
+  // Calculate the actual amount to transfer (custom or max)
+  const sourceAmount = useMaxAmount 
+    ? maxAvailableAmount 
+    : parseFloat(customAmount) || 0
+
+  // Helper function to set max amount
+  const handleMaxClick = () => {
+    setUseMaxAmount(true)
+    setCustomAmount(maxAvailableAmount.toString())
+  }
+
+  // Helper function to handle custom amount input
+  const handleCustomAmountChange = (value: string) => {
+    setCustomAmount(value)
+    setUseMaxAmount(false)
+  }
 
   // Effect: Fetch real-time cryptocurrency prices
   useEffect(() => {
@@ -300,6 +321,7 @@ export function MultiChainBalance() {
                    destinationChain && 
                    sourceChain.id !== destinationChain.id && 
                    sourceAmount > 0 && 
+                   sourceAmount <= maxAvailableAmount && 
                    bungeeQuote && 
                    isConnected
 
@@ -407,8 +429,91 @@ export function MultiChainBalance() {
         </div>
       )}
 
-      {/* Step 3: Fee Calculation & Preview */}
+      {/* Step 3: Amount Input */}
       {sourceChain && destinationChain && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">💸 Amount to Transfer</h3>
+          
+          <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+            <div className="space-y-3">
+              {/* Available Balance Display */}
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <span>Available Balance:</span>
+                <span className="font-mono">
+                  {maxAvailableAmount.toFixed(6)} {sourceChain.symbol}
+                  {maxAvailableAmount > 0 && (
+                    <span className="ml-2 text-gray-500">
+                      (≈ ${(maxAvailableAmount * getTokenPrice(sourceChain.symbol, prices)).toFixed(2)})
+                    </span>
+                  )}
+                </span>
+              </div>
+              
+              {/* Amount Input */}
+              <div className="space-y-2">
+                <div className="flex space-x-2">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      placeholder={`Enter amount in ${sourceChain.symbol}`}
+                      value={customAmount}
+                      onChange={(e) => handleCustomAmountChange(e.target.value)}
+                      max={maxAvailableAmount}
+                      min="0"
+                      step="0.000001"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                    />
+                  </div>
+                  <button
+                    onClick={handleMaxClick}
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                  >
+                    MAX
+                  </button>
+                </div>
+                
+                {/* Amount Validation */}
+                {sourceAmount > maxAvailableAmount && (
+                  <p className="text-sm text-red-600">
+                    ⚠️ Amount exceeds available balance
+                  </p>
+                )}
+                
+                {sourceAmount <= 0 && !useMaxAmount && (
+                  <p className="text-sm text-gray-500">
+                    Enter an amount greater than 0
+                  </p>
+                )}
+                
+                {/* Quick Amount Buttons */}
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleCustomAmountChange((maxAvailableAmount * 0.25).toString())}
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    25%
+                  </button>
+                  <button
+                    onClick={() => handleCustomAmountChange((maxAvailableAmount * 0.5).toString())}
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    50%
+                  </button>
+                  <button
+                    onClick={() => handleCustomAmountChange((maxAvailableAmount * 0.75).toString())}
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    75%
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Fee Calculation & Preview */}
+      {sourceChain && destinationChain && sourceAmount > 0 && (
         <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
           <h3 className="text-lg font-semibold mb-4">💰 Preview</h3>
           
