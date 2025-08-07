@@ -110,39 +110,7 @@ function calculateZeroDustFee(amount: number, actualGasCost: number): FeeCalcula
   }
 }
 
-// Helper function: Get quote from Bungee (cross-chain bridge)
-async function getBungeeQuote(params: {
-  userAddress: string
-  originChainId: number
-  destinationChainId: number
-  inputAmount: string
-}): Promise<any> {
-  try {
-    // Build the API request URL
-    const queryParams = new URLSearchParams({
-      userAddress: params.userAddress,
-      originChainId: params.originChainId.toString(),
-      destinationChainId: params.destinationChainId.toString(),
-      inputToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // Native token (ETH, MATIC, etc.)
-      outputToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // Native token on destination
-      inputAmount: params.inputAmount,
-      receiverAddress: params.userAddress
-    })
-
-    // Call Bungee API
-    const response = await fetch(`https://public-backend.bungee.exchange/api/v1/bungee/quote?${queryParams}`)
-    const data = await response.json()
-    
-    if (!data.success) {
-      throw new Error(`Bungee quote error: ${data.message || 'Unknown error'}`)
-    }
-    
-    return data.result
-  } catch (error) {
-    console.error('Failed to get Bungee quote:', error)
-    return null
-  }
-}
+// getBungeeQuote is now imported from the hook - removed duplicate function
 
 // Component: Display balance for a single blockchain
 interface ChainBalanceProps {
