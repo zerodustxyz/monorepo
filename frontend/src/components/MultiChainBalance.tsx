@@ -6,6 +6,8 @@
 import { useAccount, useBalance } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { formatEther } from 'viem'
+import { useSweepAndBridge, formatEthPrice, formatGasCost, getBungeeQuote } from '@/hooks/useSweeper'
+import { isChainSupported } from '@/lib/contracts'
 
 // Type definitions for better TypeScript support
 interface Chain {
@@ -343,38 +345,48 @@ export function MultiChainBalance() {
     )
   }
 
+  // Smart contract integration hook
+  const { sweepAndBridge, isPending: isSweepping, error: sweepError } = useSweepAndBridge()
+
   // Handle the actual sweep transaction
   const handleSweep = async () => {
-    if (!canSweep || !bungeeQuote || !feeCalculation || !sourceChain || !destinationChain) return
+    if (!canSweep || !bungeeQuote || !feeCalculation || !sourceChain || !destinationChain || !address) return
     
     try {
-      // TODO: Replace with real smart contract integration
-      // This is where you'll call your ZeroDust smart contracts
+      // Check if source chain is supported (has deployed contract)
+      if (!isChainSupported(sourceChain.id)) {
+        alert(`❌ Contract not deployed on ${sourceChain.name} yet. Please try a different source chain.`)
+        return
+      }
+
+      // Get fresh Bungee quote with transaction data
+      const quote = await getBungeeQuote({
+        userAddress: address,
+        sourceChainId: sourceChain.id,
+        destinationChainId: destinationChain.id, 
+        amount: sourceAmount.toString()
+      })
+
+      if (!quote || !quote.transactionData) {
+        throw new Error('Failed to get Bungee transaction data')
+      }
+
+      // Execute the sweep transaction
+      await sweepAndBridge({
+        chainId: sourceChain.id,
+        destinationChainId: destinationChain.id,
+        amount: sourceAmount.toString(),
+        estimatedGasCost: formatGasCost(feeCalculation.actualGasCost / getTokenPrice(sourceChain.symbol, prices)),
+        ethPriceUSD: formatEthPrice(getTokenPrice(sourceChain.symbol, prices)),
+        bungeeCalldata: quote.transactionData as `0x${string}`
+      })
+
+      alert(`🎉 Sweep transaction submitted! Your ${sourceAmount.toFixed(6)} ${sourceChain.symbol} is being bridged from ${sourceChain.name} to ${destinationChain.name}.`)
       
-      // For now, show detailed breakdown
-      alert(`
-🚀 ZeroDust Sweep Preview:
-
-📊 Transaction Details:
-• From: ${sourceChain.name} (${sourceAmount.toFixed(6)} ${sourceChain.symbol})
-• To: ${destinationChain.name}
-• USD Amount: $${(sourceAmount * getTokenPrice(sourceChain.symbol, prices)).toFixed(2)}
-
-💰 ZeroDust Fee Breakdown:
-• Base Fee: $${feeCalculation.baseFee.toFixed(2)}
-• Gas Cost: $${feeCalculation.actualGasCost.toFixed(2)}
-• Gas Buffer (20%): $${feeCalculation.gasBuffer.toFixed(3)}
-• Total Fee: $${feeCalculation.totalFee.toFixed(2)} (${feeCalculation.feePercentage.toFixed(1)}%)
-
-✅ You'll Receive: $${feeCalculation.userReceives.toFixed(2)}
-
-🔄 Powered by Bungee Protocol
-
-Note: This is a preview. Smart contracts not yet deployed.
-      `)
     } catch (error) {
       console.error('Sweep error:', error)
-      alert('Failed to execute sweep. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`❌ Sweep failed: ${errorMessage}`)
     }
   }
 
@@ -504,37 +516,56 @@ Note: This is a preview. Smart contracts not yet deployed.
 
       {/* Step 4: Execute Sweep */}
       {canSweep && feeCalculation && sourceChain && destinationChain && (
-        <button
-          onClick={handleSweep}
-          disabled={quoteLoading}
-          className="w-full bg-black text-white py-4 rounded-lg hover:bg-gray-800 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {quoteLoading ? (
-            <span className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Getting Quote...
-            </span>
-          ) : (
-            `💸 Sweep ${(feeCalculation.userReceives / getTokenPrice(sourceChain.symbol, prices)).toFixed(6)} ${sourceChain.symbol} from ${sourceChain.name} to ${destinationChain.name}`
+        <div className="space-y-3">
+          {/* Contract Status */}
+          {!isChainSupported(sourceChain.id) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+              <span className="text-yellow-700 text-sm">⚠️ Contract not yet deployed on {sourceChain.name}. Please select a different source chain.</span>
+            </div>
           )}
-        </button>
+          
+          <button
+            onClick={handleSweep}
+            disabled={quoteLoading || isSweepping || !isChainSupported(sourceChain.id)}
+            className="w-full bg-black text-white py-4 rounded-lg hover:bg-gray-800 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSweepping ? (
+              <span className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Processing Sweep...
+              </span>
+            ) : quoteLoading ? (
+              <span className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Getting Quote...
+              </span>
+            ) : !isChainSupported(sourceChain.id) ? (
+              `❌ Not Available on ${sourceChain.name}`
+            ) : (
+              `💸 Sweep ${(feeCalculation.userReceives / getTokenPrice(sourceChain.symbol, prices)).toFixed(6)} ${sourceChain.symbol} from ${sourceChain.name} to ${destinationChain.name}`
+            )}
+          </button>
+        </div>
       )}
 
       {/* Help Information */}
       <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
         <p className="font-semibold mb-1">💡 How ZeroDust works:</p>
         <p>
-          Select a source chain and a destination chain, and we will transfer the total amount. 
-          Our smart contract handles gas costs so that you can transfer the full amount and no longer worry about leaving dust on the chain.
+          Select a source chain and a destination chain, and we will transfer your full balance. 
+          Our smart contract uses EIP-7702 paymaster to sponsor gas, so you can send 100% of your ETH.
         </p>
         <p className="mt-2 text-xs text-blue-600">
           <strong>Fee structure:</strong> $0.05 base fee + gas cost × 1.20 buffer
         </p>
         <p className="mt-1 text-xs text-blue-600">
-          <strong>Status:</strong> Frontend ready, smart contracts coming soon!
+          <strong>Status:</strong> ✅ Live on 12 testnets! Smart contracts deployed and ready.
         </p>
         <p className="mt-1 text-xs text-blue-600">
-          <strong>Supported:</strong> {SUPPORTED_CHAINS.length} chains via Bungee Protocol
+          <strong>Deployed on:</strong> Ethereum, Base, Arbitrum, Optimism, Polygon, BSC, Avalanche, Blast, Ink, Mode, Scroll, Unichain
+        </p>
+        <p className="mt-1 text-xs text-blue-600">
+          <strong>Powered by:</strong> Bungee Protocol for cross-chain bridging
         </p>
       </div>
     </div>
