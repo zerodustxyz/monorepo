@@ -1,17 +1,17 @@
 // src/lib/wagmi.ts
-// Simplified wallet and chain configuration with auto-detected wallets first
+// Wallet and chain configuration for TESTNETS (where contracts are deployed)
 import { http, createConfig } from 'wagmi'
-import { mainnet, base, arbitrum, optimism, polygon } from 'wagmi/chains'
+import { sepolia, baseSepolia, arbitrumSepolia, optimismSepolia, polygonAmoy } from 'wagmi/chains'
 import { coinbaseWallet, metaMask, walletConnect, injected } from 'wagmi/connectors'
 import type { Chain } from 'wagmi/chains'
 
-// Start with the most popular and well-supported chains
+// Testnet chains where ZeroDust contracts are deployed
 const supportedChains: readonly [Chain, ...Chain[]] = [
-  mainnet, // Ethereum
-  base, // Base (Coinbase's L2)
-  arbitrum, // Arbitrum One
-  optimism, // Optimism
-  polygon, // Polygon
+  sepolia, // Ethereum Sepolia
+  baseSepolia, // Base Sepolia
+  arbitrumSepolia, // Arbitrum Sepolia
+  optimismSepolia, // Optimism Sepolia
+  polygonAmoy, // Polygon Amoy (new testnet)
 ] as const
 
 // Wallet connection setup
@@ -75,58 +75,58 @@ export const config = createConfig({
     }),
   ],
   
-  // RPC endpoints for each chain
+  // RPC endpoints for each testnet chain
   transports: {
-    [mainnet.id]: http(),
-    [base.id]: http(),
-    [arbitrum.id]: http(),
-    [optimism.id]: http(),
-    [polygon.id]: http(),
+    [sepolia.id]: http(),
+    [baseSepolia.id]: http(),
+    [arbitrumSepolia.id]: http(),
+    [optimismSepolia.id]: http(),
+    [polygonAmoy.id]: http(),
   },
 })
 
-// Export chain information for your UI
+// Export testnet chain information for your UI
 export const chainConfig = {
   chains: [
     {
-      id: mainnet.id,
-      name: 'Ethereum',
-      displayName: 'Ethereum',
-      gasLevel: 'high',
-      avgFee: '$5.00',
-      tier: 'premium'
-    },
-    {
-      id: base.id,
-      name: 'Base',
-      displayName: 'Base',
-      gasLevel: 'low',
-      avgFee: '$0.02',
-      tier: 'launch'
-    },
-    {
-      id: arbitrum.id,
-      name: 'Arbitrum One',
-      displayName: 'Arbitrum',
-      gasLevel: 'low',
-      avgFee: '$0.03',
-      tier: 'launch'
-    },
-    {
-      id: optimism.id,
-      name: 'Optimism',
-      displayName: 'Optimism',
-      gasLevel: 'low',
-      avgFee: '$0.02',
-      tier: 'launch'
-    },
-    {
-      id: polygon.id,
-      name: 'Polygon',
-      displayName: 'Polygon',
+      id: sepolia.id,
+      name: 'Ethereum Sepolia',
+      displayName: 'Ethereum Sepolia',
       gasLevel: 'low',
       avgFee: '$0.01',
-      tier: 'launch'
+      tier: 'testnet'
+    },
+    {
+      id: baseSepolia.id,
+      name: 'Base Sepolia',
+      displayName: 'Base Sepolia',
+      gasLevel: 'low',
+      avgFee: '$0.001',
+      tier: 'testnet'
+    },
+    {
+      id: arbitrumSepolia.id,
+      name: 'Arbitrum Sepolia',
+      displayName: 'Arbitrum Sepolia',
+      gasLevel: 'low',
+      avgFee: '$0.001',
+      tier: 'testnet'
+    },
+    {
+      id: optimismSepolia.id,
+      name: 'Optimism Sepolia',
+      displayName: 'Optimism Sepolia',
+      gasLevel: 'low',
+      avgFee: '$0.001',
+      tier: 'testnet'
+    },
+    {
+      id: polygonAmoy.id,
+      name: 'Polygon Amoy',
+      displayName: 'Polygon Amoy',
+      gasLevel: 'low',
+      avgFee: '$0.001',
+      tier: 'testnet'
     },
   ]
 }

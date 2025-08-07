@@ -5,11 +5,11 @@ export const SWEEPER_CONTRACT_ADDRESS = "0xdEa1412DcA2F300C4043009391ab39697450d
 
 export const PAYMASTER_ADDRESS = "0xD846063CFc26628A63bdDb4A9198B612F652F3fb" as const;
 
-// Chain configurations for deployed contracts
+// Chain configurations for deployed contracts (TESTNET CHAIN IDs)
 export const DEPLOYED_CHAINS = {
   // Ethereum Sepolia
-  1: {
-    chainId: 1,
+  11155111: {
+    chainId: 11155111,
     name: "Ethereum Sepolia", 
     contractAddress: SWEEPER_CONTRACT_ADDRESS,
     blockExplorer: "https://sepolia.etherscan.io",
@@ -17,8 +17,8 @@ export const DEPLOYED_CHAINS = {
   },
   
   // Base Sepolia
-  8453: {
-    chainId: 8453,
+  84532: {
+    chainId: 84532,
     name: "Base Sepolia",
     contractAddress: SWEEPER_CONTRACT_ADDRESS, 
     blockExplorer: "https://sepolia.basescan.org",
@@ -26,8 +26,8 @@ export const DEPLOYED_CHAINS = {
   },
   
   // Arbitrum Sepolia
-  42161: {
-    chainId: 42161,
+  421614: {
+    chainId: 421614,
     name: "Arbitrum Sepolia",
     contractAddress: SWEEPER_CONTRACT_ADDRESS,
     blockExplorer: "https://sepolia.arbiscan.io", 
@@ -35,8 +35,8 @@ export const DEPLOYED_CHAINS = {
   },
   
   // Optimism Sepolia
-  10: {
-    chainId: 10,
+  11155420: {
+    chainId: 11155420,
     name: "Optimism Sepolia",
     contractAddress: SWEEPER_CONTRACT_ADDRESS,
     blockExplorer: "https://sepolia-optimism.etherscan.io",
@@ -44,8 +44,8 @@ export const DEPLOYED_CHAINS = {
   },
   
   // Polygon Amoy
-  137: {
-    chainId: 137,
+  80002: {
+    chainId: 80002,
     name: "Polygon Amoy", 
     contractAddress: SWEEPER_CONTRACT_ADDRESS,
     blockExplorer: "https://amoy.polygonscan.com",

@@ -33,14 +33,14 @@ interface FeeCalculation {
   feePercentage: number;
 }
 
-// Chain configurations - All Bungee/Socket supported networks (as of 2025-03-21)
+// Chain configurations - TESTNET versions where contracts are deployed
 const SUPPORTED_CHAINS: Chain[] = [
-  // Tier 1 - Major EVM Chains
-  { id: 1, name: 'Ethereum', symbol: 'ETH', emoji: '🔷', tier: 1 },
-  { id: 8453, name: 'Base', symbol: 'ETH', emoji: '🔵', tier: 1 },
-  { id: 42161, name: 'Arbitrum', symbol: 'ETH', emoji: '🔷', tier: 1 },
-  { id: 10, name: 'Optimism', symbol: 'ETH', emoji: '🔴', tier: 1 },
-  { id: 137, name: 'Polygon', symbol: 'MATIC', emoji: '🟣', tier: 1 },
+  // Tier 1 - Major Testnet Chains  
+  { id: 11155111, name: 'Ethereum Sepolia', symbol: 'ETH', emoji: '🔷', tier: 1 },
+  { id: 84532, name: 'Base Sepolia', symbol: 'ETH', emoji: '🔵', tier: 1 },
+  { id: 421614, name: 'Arbitrum Sepolia', symbol: 'ETH', emoji: '🔷', tier: 1 },
+  { id: 11155420, name: 'Optimism Sepolia', symbol: 'ETH', emoji: '🔴', tier: 1 },
+  { id: 80002, name: 'Polygon Amoy', symbol: 'MATIC', emoji: '🟣', tier: 1 },
   
   // Tier 2 - Popular L2s and Alt-L1s
   { id: 56, name: 'Binance Smart Chain', symbol: 'BNB', emoji: '🟡', tier: 2 },
